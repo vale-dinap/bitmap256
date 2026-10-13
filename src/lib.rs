@@ -1,6 +1,6 @@
 use std::fmt;
 use std::iter::FusedIterator;
-use std::ops::{BitOr, BitOrAssign, BitXor, BitXorAssign, Not, Shl, ShlAssign, Shr, ShrAssign};
+use std::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not, Shl, ShlAssign, Shr, ShrAssign};
 
 #[derive(Default, Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Bitmap256([u64; 4]);
@@ -122,6 +122,22 @@ impl Not for Bitmap256 {
             self.0[iter] = !self.0[iter];
         }
         self
+    }
+}
+
+impl BitAnd for Bitmap256 {
+    type Output = Self;
+    fn bitand(mut self, rhs: Self) -> Self::Output {
+        for iter in 0..4 {
+            self.0[iter] &= rhs.0[iter];
+        }
+        self
+    }
+}
+
+impl BitAndAssign for Bitmap256 {
+    fn bitand_assign(&mut self, rhs: Self) {
+        *self = *self & rhs;
     }
 }
 
@@ -457,6 +473,31 @@ mod tests {
             flipped.flip_bit(bit);
             assert_eq!(flipped, bitmap);
         }
+    }
+
+    // And
+
+    #[test]
+    fn and_with_itself_returns_the_original() {
+        let original = Bitmap256::from_value(1329923u128);
+        let and_with_itself = original & original;
+        assert_eq!(and_with_itself, original);
+    }
+
+    #[test]
+    fn and_with_empty_bitmap_returns_empty_bitmap() {
+        let original = Bitmap256::from_value(9923u128);
+        let empty = Bitmap256::new();
+        let and_with_empty = original & empty;
+        assert_eq!(and_with_empty, empty);
+    }
+
+    #[test]
+    fn and_returns_overlapping_bits_map() {
+        let first = Bitmap256::from_value(9u128); // 0x...01001
+        let second = Bitmap256::from_value(10u128); // 0x...01010
+        let and = first & second;
+        assert_eq!(and, Bitmap256::from_value(8u128)); // 0x...01000
     }
 
     // Or
