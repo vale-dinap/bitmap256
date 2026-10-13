@@ -2,5 +2,11 @@
 name = "bitmap256"
 version = "0.1.0"
 edition = "2024"
+description = "A pure-Rust, stack-allocated 256-bit bitmap with full bitwise operators and iterator support."
+authors = ["Valerio Di Napoli <valedn@pm.me>"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/vale-dinap/bitmap256"
+keywords = ["bitmap", "bitset", "flags", "bitvector", "stack"]
+categories = ["data-structures"]
 
 [dependencies]
