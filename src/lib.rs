@@ -19,6 +19,10 @@ impl Bitmap256 {
         Bitmap256([0u64, 0u64, 0u64, 1u64]) << value
     }
 
+    pub fn has_bit(&self, bit: u8) -> bool {
+        self.0[3 - (bit >> 6) as usize] & (1u64 << (bit % 64)) != 0
+    }
+
     pub fn clear_bit(&mut self, bit: u8) {
         self.0[3 - (bit >> 6) as usize] &= !(1u64 << (bit % 64));
     }
