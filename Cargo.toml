@@ -10,3 +10,10 @@ keywords = ["bitmap", "bitset", "flags", "bitvector", "stack"]
 categories = ["data-structures"]
 
 [dependencies]
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "benchmarks"
+harness = false
