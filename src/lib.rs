@@ -1,6 +1,6 @@
 use std::fmt;
 use std::iter::FusedIterator;
-use std::ops::{BitXor, BitXorAssign, Not, Shl, ShlAssign, Shr, ShrAssign};
+use std::ops::{BitOr, BitOrAssign, BitXor, BitXorAssign, Not, Shl, ShlAssign, Shr, ShrAssign};
 
 #[derive(Default, Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Bitmap256([u64; 4]);
@@ -122,6 +122,22 @@ impl Not for Bitmap256 {
             self.0[iter] = !self.0[iter];
         }
         self
+    }
+}
+
+impl BitOr for Bitmap256 {
+    type Output = Self;
+    fn bitor(mut self, rhs: Self) -> Self::Output {
+        for iter in 0..4 {
+            self.0[iter] |= rhs.0[iter];
+        }
+        self
+    }
+}
+
+impl BitOrAssign for Bitmap256 {
+    fn bitor_assign(&mut self, rhs: Self) {
+        *self = *self | rhs;
     }
 }
 
@@ -441,6 +457,31 @@ mod tests {
             flipped.flip_bit(bit);
             assert_eq!(flipped, bitmap);
         }
+    }
+
+    // Or
+
+    #[test]
+    fn or_with_itself_returns_the_original() {
+        let original = Bitmap256::from_value(1329923u128);
+        let or_with_itself = original | original;
+        assert_eq!(or_with_itself, original);
+    }
+
+    #[test]
+    fn or_with_empty_bitmap_returns_the_original() {
+        let original = Bitmap256::from_value(9923u128);
+        let empty = Bitmap256::new();
+        let or_with_empty = original | empty;
+        assert_eq!(or_with_empty, original);
+    }
+
+    #[test]
+    fn or_two_single_bit_maps_returns_has_those_bits_set() {
+        let first = Bitmap256::from_bit(10);
+        let second = Bitmap256::from_bit(200);
+        let or = first | second;
+        assert_eq!(or, Bitmap256([256u64, 0u64, 0u64, 1024u64]));
     }
 
     // Xor
