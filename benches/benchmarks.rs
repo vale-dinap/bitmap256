@@ -1,5 +1,5 @@
 use bitmap256::Bitmap256;
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 
 fn bench_from_bit(c: &mut Criterion) {
     let mut group = c.benchmark_group("construction");
@@ -14,9 +14,7 @@ fn bench_from_bit(c: &mut Criterion) {
         b.iter(|| Bitmap256::from_value(black_box(0xFFu128)))
     });
 
-    group.bench_function("new", |b| {
-        b.iter(Bitmap256::new)
-    });
+    group.bench_function("new", |b| b.iter(Bitmap256::new));
 
     group.finish();
 }
@@ -164,9 +162,7 @@ fn bench_bitwise(c: &mut Criterion) {
         bencher.iter(|| black_box(a) ^ black_box(b))
     });
 
-    group.bench_function("not", |bencher| {
-        bencher.iter(|| !black_box(a))
-    });
+    group.bench_function("not", |bencher| bencher.iter(|| !black_box(a)));
 
     group.finish();
 }
