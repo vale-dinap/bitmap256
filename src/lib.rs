@@ -1,40 +1,99 @@
+//! A 256-bit bitmap implementation optimized for performance and ease of use.
+//!
+//! This module provides a `Bitmap256` type that represents a fixed-size set of bits,
+//! useful for tracking flags, permissions, or presence efficiently.
+//! It supports standard bitwise operations, iteration, and formatting.
+
+#![deny(missing_docs)]
+
 use std::fmt;
 use std::iter::FusedIterator;
 use std::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not, Shl, ShlAssign, Shr, ShrAssign};
 
+/// A 256-bit bitmap represented by four `u64` words.
+///
+/// The bits are indexed from 0 (least significant bit of the last word) to 255
+/// (most significant bit of the first word). This layout allows for efficient
+/// bitwise operations while maintaining a consistent integer-like interface.
+///
+/// # Example
+/// ```
+/// use bitmap256::Bitmap256;
+///
+/// let mut map = Bitmap256::new();
+/// map.set_bit(0);
+/// map.set_bit(63);
+/// assert!(map.has_bit(0));
+/// assert!(!map.has_bit(1)); // Default is false (zero)
+/// ```
 #[derive(Default, Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Bitmap256([u64; 4]);
 
 impl Bitmap256 {
+    /// Creates a new empty `Bitmap256` (all bits set to 0).
+    ///
+    /// Equivalent to `Bitmap256::default()`.
+    ///
+    /// # Example
+    /// ```
+    /// use bitmap256::Bitmap256;
+    ///
+    /// let bitmap = Bitmap256::new();
+    /// assert_eq!(bitmap.count_ones(), 0);
+    /// ```
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Creates a `Bitmap256` from a value that can be converted into a `u128`.
+    ///
+    /// The lowest 64 bits of the input map to bitmap indices 0–63 (word 3),
+    /// and the highest 64 bits map to indices 64–127 (word 2). Words 0 and 1
+    /// are always zero.
+    ///
+    /// # Example
+    /// ```
+    /// use bitmap256::Bitmap256;
+    ///
+    /// let bitmap = Bitmap256::from_value(0xFFu128);
+    /// assert!(bitmap.has_bit(0));
+    /// assert!(bitmap.has_bit(7));
+    /// ```
     pub fn from_value<T: Into<u128>>(value: T) -> Self {
         let value: u128 = value.into();
         Bitmap256([0u64, 0u64, (value >> 64) as u64, (value as u64)])
     }
 
+    /// Creates a `Bitmap256` with only the bit at index `bit` set to 1.
     pub fn from_bit(value: u8) -> Self {
         Bitmap256([0u64, 0u64, 0u64, 1u64]) << value
     }
 
+    /// Returns whether the bit at `bit` index is set to 1.
     pub fn has_bit(&self, bit: u8) -> bool {
         self.0[3 - (bit >> 6) as usize] & (1u64 << (bit % 64)) != 0
     }
 
+    /// Sets the bit at `bit` index to 0.
     pub fn clear_bit(&mut self, bit: u8) {
         self.0[3 - (bit >> 6) as usize] &= !(1u64 << (bit % 64));
     }
 
+    /// Sets the bit at `bit` index to 1.
     pub fn set_bit(&mut self, bit: u8) {
         self.0[3 - (bit >> 6) as usize] |= 1u64 << (bit % 64);
     }
 
+    /// Toggles the bit at `bit` index.
     pub fn flip_bit(&mut self, bit: u8) {
         self.0[3 - (bit >> 6) as usize] ^= 1u64 << (bit % 64);
     }
 
+    /// Returns the number of leading zeros in the bitmap.
+    ///
+    /// Since bits are indexed from LSB (index 0) to MSB (index 255), "leading"
+    /// zeros refer to zeros at the high-index end (indices 255 down to `n`).
+    /// Returns 256 if the bitmap is empty.
     pub fn leading_zeros(&self) -> u16 {
         let mut result: u16 = 0;
         for word in 0..4 {
@@ -48,6 +107,11 @@ impl Bitmap256 {
         result
     }
 
+    /// Returns the number of trailing zeros in the bitmap.
+    ///
+    /// Since bits are indexed from LSB (index 0) to MSB (index 255), "trailing"
+    /// zeros refer to zeros at the low-index end (indices 0 up to `n-1`).
+    /// Returns 256 if the bitmap is empty.
     pub fn trailing_zeros(&self) -> u16 {
         let mut result: u16 = 0;
         for word in (0..4).rev() {
@@ -61,6 +125,9 @@ impl Bitmap256 {
         result
     }
 
+    /// Returns the index of the most significant bit (highest index) that is set to 1.
+    ///
+    /// Returns `None` if the bitmap is empty.
     pub fn most_significant_bit(&self) -> Option<u8> {
         let zeros = self.leading_zeros();
         debug_assert!(
@@ -73,6 +140,9 @@ impl Bitmap256 {
         }
     }
 
+    /// Returns the index of the least significant bit (lowest index) that is set to 1.
+    ///
+    /// Returns `None` if the bitmap is empty.
     pub fn least_significant_bit(&self) -> Option<u8> {
         let zeros = self.trailing_zeros();
         debug_assert!(
@@ -85,6 +155,15 @@ impl Bitmap256 {
         }
     }
 
+    /// Returns the number of bits set to 1.
+    ///
+    /// # Example
+    /// ```
+    /// use bitmap256::Bitmap256;
+    ///
+    /// let bitmap = Bitmap256::from_value(0xFFu128);
+    /// assert_eq!(bitmap.count_ones(), 8);
+    /// ```
     pub fn count_ones(&self) -> usize {
         let mut ones: usize = 0;
         for iter in 0..4 {
@@ -93,6 +172,17 @@ impl Bitmap256 {
         ones
     }
 
+    /// Returns an iterator over the indices of bits set to 1.
+    ///
+    /// The iterator yields indices in ascending order.
+    ///
+    /// # Example
+    /// ```
+    /// use bitmap256::Bitmap256;
+    ///
+    /// let bitmap = Bitmap256::from_value(0b101u128);
+    /// assert_eq!(bitmap.ones().collect::<Vec<_>>(), vec![0, 2]);
+    /// ```
     pub fn ones(&self) -> Ones {
         Ones(*self)
     }
@@ -259,6 +349,7 @@ impl IntoIterator for &Bitmap256 {
     }
 }
 
+/// An iterator over the indices of set bits in a `Bitmap256`.
 #[derive(Clone, Debug)]
 pub struct Ones(Bitmap256);
 
