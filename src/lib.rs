@@ -796,4 +796,13 @@ mod tests {
             assert_eq!(bitmap255, primitive as usize);
         }
     }
+
+    #[test]
+    fn test_iterator() {
+        let bm = Bitmap256::from_bit(10) ^ Bitmap256::from_bit(200);
+        let mut it = bm.ones();
+        assert_eq!(it.next(), Some(10));
+        assert_eq!(it.next_back(), Some(200));
+        assert_eq!(it.next(), None);
+    }
 }
