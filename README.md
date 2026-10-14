@@ -11,7 +11,7 @@ When you need a large bitset (e.g., capability masks, permission flags, active-s
 ## Features
 
 - **Fixed Size**: Exactly 256 bits (4 × `u64`), stored compactly on the stack.
-- **Operator Overloading**: `<<`, `>>`, `^`, `!` for intuitive bitwise manipulation.
+- **Operator Overloading**: `<<`, `>>`, `!`, `&`, `|`, `^` for intuitive bitwise manipulation.
 - **Iteration**: `IntoIterator` yields indices of set bits in ascending order.
 - **Utility Methods**:
   - `count_ones()` — population count
@@ -22,26 +22,26 @@ When you need a large bitset (e.g., capability masks, permission flags, active-s
 
 ## Performance
 
-All operations are stack-allocated and branchless where possible. Benchmarked on a typical modern CPU:
+All operations are stack-allocated. Benchmarked with Criterion on an AMD Ryzen AI 9 365 (Razer Blade 14 laptop, AC power, performance profile), Windows 11 Pro, rustc 1.97.1 (8bab26f4f 2026-07-14):
 
 | Operation | Time |
 |-----------|------|
-| `Bitmap256::new()` | ~1 ns |
-| `Bitmap256::from_value()` | ~0.7 ns |
+| `Bitmap256::new()` | <1 ns |
+| `Bitmap256::from_value()` | <1 ns |
 | `Bitmap256::from_bit(n)` | ~6 ns |
 | `set_bit(n)` / `clear_bit(n)` / `flip_bit(n)` | ~5 ns |
-| `count_ones()` | ~2 ns |
-| `leading_zeros()` / `trailing_zeros()` | <1 ns |
-| `most_significant_bit()` / `least_significant_bit()` | ~1 ns |
 | `has_bit(n)` | ~1 ns |
-| `ones()` (sparse, 3 bits) | ~7 ns |
-| `ones()` (dense, 64 bits) | ~170 ns |
-| `ones()` (full, 256 bits) | ~775 ns |
+| `count_ones()` | ~1.6 ns |
+| `leading_zeros()` / `trailing_zeros()` | <1 ns |
+| `most_significant_bit()` / `least_significant_bit()` | ~1-2 ns |
+| `ones()` (sparse, 2 bits) | ~4 ns |
+| `ones()` (dense, 64 bits) | ~100 ns |
+| `ones()` (full, 256 bits) | ~490 ns |
 | `a << n` / `a >> n` | ~6 ns |
-| `a ^ b` | ~1.7 ns |
+| `a ^ b` | ~1.5 ns |
 | `!a` | ~1 ns |
 
-*Results are per-operation averages from Criterion benchmarks in `benches/benchmarks.rs`.*
+*Medians from the Criterion benchmarks in `benches/benchmarks.rs`. Sub-nanosecond results are at the measurement floor.*
 
 ## Bit Layout & Indexing
 
@@ -109,7 +109,7 @@ let shifted = a << 5;          // Left shift by 5
 | Generics    | No | Yes |
 | Max bits    | 256 | Arbitrary |
 | Overflow    | Panics | Panics |
-| Compile time | Fast | Slowest |
+| Compile time | Fast | Slow |
 
 ## When to Use
 
