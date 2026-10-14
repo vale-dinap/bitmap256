@@ -362,7 +362,7 @@ impl Iterator for Ones {
     fn next(&mut self) -> Option<Self::Item> {
         let least_significant = self.0.least_significant_bit();
         if let Some(x) = least_significant {
-            self.0 ^= Bitmap256::from_bit(x);
+            self.0.clear_bit(x);
         }
         least_significant
     }
@@ -377,7 +377,7 @@ impl DoubleEndedIterator for Ones {
     fn next_back(&mut self) -> Option<Self::Item> {
         let most_significant = self.0.most_significant_bit();
         if let Some(x) = most_significant {
-            self.0 ^= Bitmap256::from_bit(x);
+            self.0.clear_bit(x);
         }
         most_significant
     }
