@@ -427,10 +427,12 @@ mod tests {
             "Word 2 value is {}, expected 0",
             from_max64.0[2]
         );
-        assert!(
-            from_max64.0[3] > 0,
-            "Word 3 value is {}, expected gt 0",
-            from_max64.0[3]
+        assert_eq!(
+            from_max64.0[3],
+            u64::MAX,
+            "Word 3 value is {}, expected {}",
+            from_max64.0[3],
+            u64::MAX
         );
     }
 
@@ -447,15 +449,19 @@ mod tests {
             "Word 1 value is {}, expected 0",
             from_max128.0[1]
         );
-        assert!(
-            from_max128.0[2] > 0,
-            "Word 2 value is {}, expected gt 0",
-            from_max128.0[2]
+        assert_eq!(
+            from_max128.0[2],
+            u64::MAX,
+            "Word 2 value is {}, expected {}",
+            from_max128.0[2],
+            u64::MAX
         );
-        assert!(
-            from_max128.0[3] > 0,
-            "Word 3 value is {}, expected gt 0",
-            from_max128.0[3]
+        assert_eq!(
+            from_max128.0[3],
+            u64::MAX,
+            "Word 3 value is {}, expected {}",
+            from_max128.0[3],
+            u64::MAX
         );
     }
 
@@ -680,17 +686,17 @@ mod tests {
 
     #[test]
     fn shl_by_65_combines_word_move_with_carry() {
-        let word_a = 0u64;
-        let word_b = 120u64;
-        let word_c = 237468u64;
+        let word_a = 1u64;
+        let word_b = 121u64;
+        let word_c = (1u64 << 63) | 237468;
         let word_d = u64::MAX;
         let bitmap = Bitmap256([word_a, word_b, word_c, word_d]);
         let shifted = bitmap << 65;
         let shifted_manually = Bitmap256([
-            (word_b << 1) | word_c >> 63,
-            (word_c << 1) | word_d >> 63,
-            word_d << 1,
-            0u64,
+            (word_b << 1) | word_c >> 63, // word_a becomes word_b plus 1 additional bit shift (LSB is word_c's MSB)
+            (word_c << 1) | word_d >> 63, // word_b becomes word_c plus 1 additional bit shift (LSB is word_d's MSB)
+            word_d << 1, // word_c becomes word_d plus 1 additional bit shift (LSB is zero)
+            0u64,        // word_d becomes empty
         ]);
         assert_eq!(shifted, shifted_manually);
     }
@@ -731,17 +737,17 @@ mod tests {
 
     #[test]
     fn shr_by_65_combines_word_move_with_carry() {
-        let word_a = 0u64;
-        let word_b = 120u64;
+        let word_a = 1u64;
+        let word_b = 121u64;
         let word_c = 237468u64;
         let word_d = u64::MAX;
         let bitmap = Bitmap256([word_a, word_b, word_c, word_d]);
         let shifted = bitmap >> 65;
         let shifted_manually = Bitmap256([
-            0u64,
-            word_a >> 1,
-            (word_b >> 1) | (word_a >> 63) << 63,
-            (word_c >> 1) | (word_b >> 63) << 63,
+            0u64,                         // word_a becomes empty
+            word_a >> 1, // word_b becomes word_a plus 1 additional bit shift (MSB is zero)
+            (word_b >> 1) | word_a << 63, // word_c becomes word_b plus 1 additional bit shift (MSB is word_a's LSB)
+            (word_c >> 1) | word_b << 63, // word_d becomes word_c plus 1 additional bit shift (MSB is word_b's LSB)
         ]);
         assert_eq!(shifted, shifted_manually);
     }
@@ -812,7 +818,7 @@ mod tests {
 
     #[test]
     fn most_significant_bit_returns_some_on_non_empty() {
-        for n in 0..255 {
+        for n in 0..=255 {
             let bitmap = Bitmap256::from_bit(n);
             assert_eq!(bitmap.most_significant_bit(), Some(n));
         }
@@ -834,7 +840,7 @@ mod tests {
 
     #[test]
     fn least_significant_bit_returns_some_on_non_empty() {
-        for n in 0..255 {
+        for n in 0..=255 {
             let bitmap = Bitmap256::from_bit(n);
             assert_eq!(bitmap.least_significant_bit(), Some(n));
         }
@@ -864,7 +870,7 @@ mod tests {
 
     #[test]
     fn count_ones_returns_1_for_every_from_bit_n() {
-        for n in 0..255 {
+        for n in 0..=255 {
             assert_eq!(Bitmap256::from_bit(n).count_ones(), 1);
         }
     }
