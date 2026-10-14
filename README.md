@@ -28,7 +28,7 @@ All operations are stack-allocated. Benchmarked with Criterion on an AMD Ryzen A
 |-----------|------|
 | `Bitmap256::new()` | <1 ns |
 | `Bitmap256::from_value()` | <1 ns |
-| `Bitmap256::from_bit(n)` | ~6 ns |
+| `Bitmap256::from_bit(n)` | ~1 ns |
 | `set_bit(n)` / `clear_bit(n)` / `flip_bit(n)` | ~5 ns |
 | `has_bit(n)` | ~1 ns |
 | `count_ones()` | ~1.6 ns |

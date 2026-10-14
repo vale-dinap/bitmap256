@@ -69,7 +69,9 @@ impl Bitmap256 {
 
     /// Creates a `Bitmap256` with only the bit at index `bit` set to 1.
     pub fn from_bit(value: u8) -> Self {
-        Bitmap256([0u64, 0u64, 0u64, 1u64]) << value
+        let mut b = Bitmap256([0u64, 0u64, 0u64, 0u64]);
+        b.set_bit(value);
+        b
     }
 
     /// Returns whether the bit at `bit` index is set to 1.
